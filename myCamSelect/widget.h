@@ -31,7 +31,22 @@ private slots:
 
     void on_btnClose_clicked();
 
-    void on_up_carro_clicked();
+    void on_up_carro_pressed();
+
+    void on_right_carro_pressed();
+
+    void on_down_carro_pressed();
+
+
+    void on_left_carro_pressed();
+
+    void on_up_webcam_pressed();
+
+    void on_right_webcam_pressed();
+
+    void on_down_webcam_pressed();
+
+    void on_left_webcam_pressed();
 
 private:
     Ui::Widget *ui;

@@ -22,3 +22,5 @@ FORMS    += widget.ui
 RESOURCES += \
     imagens.qrc \
     imagens.qrc
+
+DISTFILES +=

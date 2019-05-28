@@ -3,6 +3,9 @@
 #include <QCameraInfo>
 #include <QDebug>
 #include <QMessageBox>
+#include <iostream>
+#include <QAbstractButton>
+using namespace std;
 
 
 Widget::Widget(QWidget *parent) :
@@ -188,8 +191,48 @@ void Widget::on_btnClose_clicked()
     close();
 }
 
-void Widget::on_up_carro_clicked()
+
+
+
+
+
+void Widget::on_up_carro_pressed()
 {
-    // função de que move o carro para frente.
+     cout << "Carro anda para  frente." << endl;
 }
 
+void Widget::on_right_carro_pressed()
+{
+    cout << "Carro anda para  direita." << endl;
+}
+
+void Widget::on_down_carro_pressed()
+{
+    cout << "Carro anda para  trás." << endl;
+}
+
+
+void Widget::on_left_carro_pressed()
+{
+    cout << "Carro anda para  esquerda." << endl;
+}
+
+void Widget::on_up_webcam_pressed()
+{
+    cout << "Camera gira para cima." << endl;
+}
+
+void Widget::on_right_webcam_pressed()
+{
+    cout << "Camera gira para  direita." << endl;
+}
+
+void Widget::on_down_webcam_pressed()
+{
+    cout << "Camera gira para  baixo." << endl;
+}
+
+void Widget::on_left_webcam_pressed()
+{
+    cout << "Camera gira para  esquerda." << endl;
+}
