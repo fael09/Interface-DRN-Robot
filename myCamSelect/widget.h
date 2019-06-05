@@ -1,8 +1,8 @@
-#ifndef WIDGET_H
+ #ifndef WIDGET_H
 #define WIDGET_H
 
 #include <QWidget>
-
+#include <QSerialPort>
 #include <QList>
 #include <QCameraInfo>
 #include <QCameraViewfinder>
@@ -11,13 +11,19 @@
 namespace Ui {
 class Widget;
 }
+//-------------------------
+//classes de capitura de imagens
+
+class QCameraImageCapture;
+
+//-------------------------
 
 class Widget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit Widget(QWidget *parent = 0);
+    explicit Widget(QWidget *parent = nullptr);
     ~Widget();
 
     void SetCbListCam(QList<QCameraInfo> &cams);
@@ -48,8 +54,29 @@ private slots:
 
     void on_left_webcam_pressed();
 
+    void on_pushButton_clicked();
+
+    void upWrite(QString );
+    void upRead();
+
+    void on_pwm_ctrl_valueChanged(int arg1);
+
+    void on_ms_ctrl_valueChanged(int arg1);
+
+    void on_servo_base_valueChanged(int arg1);
+
+    void on_servo_camera_valueChanged(int arg1);
+
 private:
     Ui::Widget *ui;
+    QSerialPort *arduino;
+    static const quint16 arduino_uno_vendor_id = 6790;
+    static const quint16 rduino_uno_product_id = 29987;
+    QString arduino_port_nome;
+    bool arduino_is_available;
+
+    QCameraImageCapture *CameraImageCapture;
+
     QCameraViewfinder *viewFinder;
 
     QCamera *camera;

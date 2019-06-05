@@ -1,10 +1,19 @@
 #include "widget.h"
 #include "ui_widget.h"
 #include <QCameraInfo>
-#include <QDebug>
 #include <QMessageBox>
 #include <iostream>
 #include <QAbstractButton>
+#include <QSerialPort>
+#include <QSerialPortInfo>
+#include <QDebug>
+#include <QtWidgets>
+#include <QCamera>
+#include <QFileDialog>
+#include <QCameraImageCapture>
+#include <QCameraViewfinder>
+
+
 using namespace std;
 
 
@@ -13,6 +22,52 @@ Widget::Widget(QWidget *parent) :
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
+
+    arduino_port_nome = "";
+    arduino_is_available = false;
+    arduino = new QSerialPort;
+
+    /*
+    qDebug() << "Number of available ports: " << QSerialPortInfo::availablePorts().length();
+    foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()){
+        qDebug() << "Has vendor ID: " << serialPortInfo.hasVendorIdentifier();
+        if(serialPortInfo.hasVendorIdentifier() ){
+            qDebug() << "Vendor ID : " << serialPortInfo.vendorIdentifier();
+        }
+        qDebug() << "Has Product ID: " << serialPortInfo.hasProductIdentifier();
+        if(serialPortInfo.hasProductIdentifier()){
+            qDebug() << "Product ID : " << serialPortInfo.productIdentifier();
+        }
+    }
+        */
+    foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()){
+        if(serialPortInfo.hasVendorIdentifier() && serialPortInfo.hasProductIdentifier()){
+            if(serialPortInfo.vendorIdentifier() == arduino_uno_vendor_id){
+                if(serialPortInfo.productIdentifier() == rduino_uno_product_id){
+                   arduino_port_nome =  serialPortInfo.portName();
+                   arduino_is_available = true;
+
+                }
+            }
+        }
+    }
+
+    if(arduino_is_available){
+       //open and configure the serialport
+        arduino->setPortName(arduino_port_nome);
+        //arduino->open(QSerialPort::WriteOnly);
+        arduino->open(QSerialPort::ReadWrite);// Write onle. I need to change this for write and read.
+        arduino->setBaudRate(QSerialPort::Baud115200);
+        arduino->setDataBits(QSerialPort::Data8);
+        arduino->setParity(QSerialPort::NoParity);
+        arduino->setStopBits(QSerialPort::OneStop);
+        arduino->setFlowControl(QSerialPort::NoFlowControl);
+    }else{
+        //give error message if not available
+        QMessageBox::warning(this,"Port error","Couldn't find Arduino!");
+    }
+
+
 
     QMessageBox msgApp;
 
@@ -53,6 +108,9 @@ Widget::Widget(QWidget *parent) :
  */
 Widget::~Widget()
 {
+    if(arduino->isOpen()){
+        arduino->close();
+    }
     delete ui;
 }
 
@@ -87,6 +145,7 @@ void Widget::on_btnOpenCam_clicked()
     /* Enable Button "Capturar Image" and "Desconectar" */
     ui->btnCaptureImage->setEnabled(true);
     ui->btnCloseCam->setEnabled(true);
+    ui->CaptureVideo->setEnabled(true);
 
     /* Trick: Convert to QString to QByteArray using .toUtf8() */
     myDeviceCam = ui->cbListCam->itemText(ui->cbListCam->currentIndex()).toUtf8();
@@ -172,6 +231,7 @@ void Widget::on_btnCloseCam_clicked()
     ui->btnOpenCam->setEnabled(true);
     ui->btnCloseCam->setEnabled(false);
     ui->btnCaptureImage->setEnabled(false);
+    ui->CaptureVideo->setEnabled(false);
 
 }
 
@@ -181,8 +241,23 @@ void Widget::on_btnCloseCam_clicked()
  */
 void Widget::on_btnCaptureImage_clicked()
 {
-    /* Implement Code Here! */
-    /* Future Implementation */
+    camera = new QCamera(this);
+    CameraImageCapture = new QCameraImageCapture(camera,this);
+    auto filename = QFileDialog::getSaveFileName(this, "Capturar", "/", "Imagen(*.jpg;*.jpeg)");
+    if(filename.isEmpty()){
+        cout << "ok" << endl;
+        return;
+    }
+    CameraImageCapture->setCaptureDestination(QCameraImageCapture::CaptureToFile);
+    QImageEncoderSettings imageSettings;
+    imageSettings.setCodec("image/jpeg");
+    imageSettings.setResolution(1600, 1200);
+    CameraImageCapture->setEncodingSettings(imageSettings);
+    camera->setCaptureMode(QCamera::CaptureStillImage);
+    camera->start();
+    camera->searchAndLock();
+    CameraImageCapture->capture(filename);
+    camera->unlock();
 }
 
 void Widget::on_btnClose_clicked()
@@ -195,28 +270,40 @@ void Widget::on_btnClose_clicked()
 
 
 
-
+//-----------------------------------------------------------------------///
+//cotrole do carrinho pelas setas
 void Widget::on_up_carro_pressed()
 {
      cout << "Carro anda para  frente." << endl;
+     Widget::upWrite("1");
+     Widget::upRead();
 }
 
 void Widget::on_right_carro_pressed()
 {
     cout << "Carro anda para  direita." << endl;
+    Widget::upWrite("2");
+    Widget::upRead();
+
 }
 
 void Widget::on_down_carro_pressed()
 {
     cout << "Carro anda para  trás." << endl;
+    Widget::upWrite("5");
+    Widget::upRead();
 }
 
 
 void Widget::on_left_carro_pressed()
 {
     cout << "Carro anda para  esquerda." << endl;
+    Widget::upWrite("4");
+    Widget::upRead();
 }
-
+//-----------------------------------------------------//
+// --------------------------------------------//
+// controle da camera do carrinho pelos botões de seta
 void Widget::on_up_webcam_pressed()
 {
     cout << "Camera gira para cima." << endl;
@@ -236,3 +323,54 @@ void Widget::on_left_webcam_pressed()
 {
     cout << "Camera gira para  esquerda." << endl;
 }
+
+void Widget::on_pushButton_clicked()
+{
+    cout << "Camera no centro" << endl;
+}
+
+//----------------------------------------------------------//
+// Escrita na porta seria do arduino
+void Widget::upWrite(QString command){
+    if(arduino->isWritable()){
+        arduino->write(command.toStdString().c_str());
+    }else{
+        qDebug() << "Couldn't write the Serial!";
+    }
+
+}
+// Leitura na porta seria do arduino
+void Widget::upRead(){
+    QString out;
+    if(arduino->isReadable()){
+       out = arduino->readAll();
+      // qDebug() << out;
+    }else{
+        qDebug() << "Couldn't write the Serial!";
+    }
+
+}
+//----------------------------------------------------//
+
+//-----------------------------------------------------//
+// controle do pwm do carrinho
+void Widget::on_pwm_ctrl_valueChanged(int pwm)
+{
+    qDebug() << pwm;
+}
+// controle de ms do carrinho
+void Widget::on_ms_ctrl_valueChanged(int ms)
+{
+    qDebug() << ms;
+}
+// Controle do angulo da base
+void Widget::on_servo_base_valueChanged(int angulo_base)
+{
+    qDebug() << angulo_base;
+}
+ // Controle do angulo da camera
+void Widget::on_servo_camera_valueChanged(int angulo_camera)
+{
+    qDebug() << angulo_camera;
+}
+//----------------------------------------------------//
