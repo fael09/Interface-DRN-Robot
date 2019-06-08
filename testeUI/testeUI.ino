@@ -9,12 +9,13 @@ void setup() {
 }
 
 void loop() {
+ 
   if (Serial.available() != 0) {
     String msg = Serial.readString();
+    Serial.println(msg);
     Serial.readString(); // limpa
 
     int sel = msg.toInt();
-
     switch (sel) {
       case 1:
         digitalWrite(led, 1);
@@ -25,9 +26,9 @@ void loop() {
       case 3:
         for (int i = 0; i < 3 ; i++) {
           digitalWrite(led, 1);
-          delay(200);
+          delay(100);
           digitalWrite(led, 0);
-          delay(300);
+          delay(100);
         }
         break;
     }
