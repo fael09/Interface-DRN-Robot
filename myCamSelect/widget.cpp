@@ -12,9 +12,16 @@
 #include <QFileDialog>
 #include <QCameraImageCapture>
 #include <QCameraViewfinder>
+#include <QMediaRecorder>
+#include <QMediaPlayer>
+#include "opencv2/opencv.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
 
 
 using namespace std;
+using namespace cv;
 
 
 Widget::Widget(QWidget *parent) :
@@ -23,9 +30,12 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
+
     arduino_port_nome = "";
     arduino_is_available = false;
     arduino = new QSerialPort;
+
 
     /*
     qDebug() << "Number of available ports: " << QSerialPortInfo::availablePorts().length();
@@ -145,13 +155,16 @@ void Widget::on_btnOpenCam_clicked()
     /* Enable Button "Capturar Image" and "Desconectar" */
     ui->btnCaptureImage->setEnabled(true);
     ui->btnCloseCam->setEnabled(true);
-    ui->CaptureVideo->setEnabled(true);
+    ui->gravarVideo->setEnabled(true);
+
 
     /* Trick: Convert to QString to QByteArray using .toUtf8() */
     myDeviceCam = ui->cbListCam->itemText(ui->cbListCam->currentIndex()).toUtf8();
 
     /* Set device select in ComboxBox */
     camera = new QCamera(myDeviceCam);
+    CameraImageCapture = new QCameraImageCapture(camera,this);
+    recorder = new QMediaRecorder(camera,this);
 
     /*
      * Create ViewFinder "Visualizador" to device camera
@@ -231,7 +244,8 @@ void Widget::on_btnCloseCam_clicked()
     ui->btnOpenCam->setEnabled(true);
     ui->btnCloseCam->setEnabled(false);
     ui->btnCaptureImage->setEnabled(false);
-    ui->CaptureVideo->setEnabled(false);
+    ui->gravarVideo->setEnabled(false);
+
 
 }
 
@@ -241,22 +255,14 @@ void Widget::on_btnCloseCam_clicked()
  */
 void Widget::on_btnCaptureImage_clicked()
 {
-    camera = new QCamera(this);
-    CameraImageCapture = new QCameraImageCapture(camera,this);
-    auto filename = QFileDialog::getSaveFileName(this, "Capturar", "/", "Imagen(*.jpg;*.jpeg)");
-    if(filename.isEmpty()){
-        cout << "ok" << endl;
-        return;
-    }
-    CameraImageCapture->setCaptureDestination(QCameraImageCapture::CaptureToFile);
-    QImageEncoderSettings imageSettings;
-    imageSettings.setCodec("image/jpeg");
-    imageSettings.setResolution(1600, 1200);
-    CameraImageCapture->setEncodingSettings(imageSettings);
+    auto filename_imagem = QFileDialog::getSaveFileName(this, "Capturar", "/",
+                                "Imagen (*.jpg;*.jpeg)");
+
     camera->setCaptureMode(QCamera::CaptureStillImage);
-    camera->start();
     camera->searchAndLock();
-    CameraImageCapture->capture(filename);
+    //on shutter button pressed
+    CameraImageCapture->capture(filename_imagem);
+    //on shutter button released
     camera->unlock();
 }
 
@@ -265,9 +271,6 @@ void Widget::on_btnClose_clicked()
     ui->btnCloseCam->click();
     close();
 }
-
-
-
 
 
 //-----------------------------------------------------------------------///
@@ -322,11 +325,13 @@ void Widget::on_down_webcam_pressed()
 void Widget::on_left_webcam_pressed()
 {
     cout << "Camera gira para  esquerda." << endl;
+
 }
 
 void Widget::on_pushButton_clicked()
 {
     cout << "Camera no centro" << endl;
+
 }
 
 //----------------------------------------------------------//
@@ -374,3 +379,68 @@ void Widget::on_servo_camera_valueChanged(int angulo_camera)
     qDebug() << angulo_camera;
 }
 //----------------------------------------------------//
+
+
+
+
+
+
+
+void Widget::on_gravarVideo_clicked()
+{
+    ui->gravarVideo->setEnabled(false);
+    ui->pararVideo->setEnabled(true);
+    QString css = "background-color:#f00;color:#000";
+     ui->gravarVideo->setStyleSheet(css);
+
+     camera->stop();
+
+     /* Destruct objects created in OpenCam */
+    delete camera;
+    delete viewFinder;
+
+     VideoCapture vcap(0);
+       if(!vcap.isOpened()){
+              cout << "Error opening video stream or file" << endl;
+
+       }
+
+    int frame_width=   vcap.get(CV_CAP_PROP_FRAME_WIDTH);
+    int frame_height=   vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
+    VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, Size(frame_width,frame_height),true);
+    //QString x;
+    while(1){
+
+        Mat frame;
+        vcap >> frame;
+        video.write(frame);
+        imshow( "Frame", frame );
+        // se apertar esc vai parar o loop
+        char c = (char)waitKey(60);
+        if (c == 27){
+          break;
+        }
+        //x = ui->pararVideo->text();
+
+        if(ui->pararVideo->text() == "parado"){
+            break;
+        }
+
+
+     }
+
+    vcap.release();
+    destroyAllWindows();
+     css = "background-color:#ddd;color:#000";
+     ui->gravarVideo->setStyleSheet(css);
+     this->on_btnOpenCam_clicked();
+     this->OpenCam();
+}
+
+
+void Widget::on_pararVideo_clicked()
+{
+    ui->pararVideo->setText("parado");
+    ui->gravarVideo->setEnabled(true);
+    ui->pararVideo->setEnabled(false);
+}

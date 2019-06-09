@@ -6,6 +6,8 @@
 #include <QList>
 #include <QCameraInfo>
 #include <QCameraViewfinder>
+#include <QAudioEncoderSettings>
+#include <QVideoEncoderSettings>
 
 
 namespace Ui {
@@ -15,6 +17,8 @@ class Widget;
 //classes de capitura de imagens
 
 class QCameraImageCapture;
+class QMediaRecorder;
+
 
 //-------------------------
 
@@ -67,6 +71,13 @@ private slots:
 
     void on_servo_camera_valueChanged(int arg1);
 
+
+    void on_gravarVideo_clicked();
+
+
+
+    void on_pararVideo_clicked();
+
 private:
     Ui::Widget *ui;
     QSerialPort *arduino;
@@ -80,6 +91,8 @@ private:
     QCameraViewfinder *viewFinder;
 
     QCamera *camera;
+    QMediaRecorder *recorder;
+
 
     bool checkCameras(void);
     void OpenCam(void);
