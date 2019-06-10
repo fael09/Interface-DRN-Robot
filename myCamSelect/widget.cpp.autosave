@@ -332,7 +332,7 @@ void Widget::on_up_webcam_pressed()
 
    total =  string(str1+camstr+str2);
    cout << total << endl;
-    Widget::upWrite("total");
+    Widget::upWrite("2<2<5<3<");
     Widget::upRead();
 }
 

@@ -89,6 +89,7 @@ private:
     QCameraImageCapture *CameraImageCapture;
 
     QCameraViewfinder *viewFinder;
+    int cam ;
 
     QCamera *camera;
     QMediaRecorder *recorder;
