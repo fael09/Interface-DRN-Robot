@@ -255,13 +255,13 @@ void Widget::on_btnCloseCam_clicked()
  */
 void Widget::on_btnCaptureImage_clicked()
 {
-    auto filename_imagem = QFileDialog::getSaveFileName(this, "Capturar", "/",
-                                "Imagen (*.jpg;*.jpeg)");
+    //auto filename_imagem = QFileDialog::getSaveFileName(this, "Capturar", "/",
+                               // "Imagen (*.jpg;*.jpeg)");
 
     camera->setCaptureMode(QCamera::CaptureStillImage);
     camera->searchAndLock();
     //on shutter button pressed
-    CameraImageCapture->capture(filename_imagem);
+    CameraImageCapture->capture(); //filename_imagem
     //on shutter button released
     camera->unlock();
 }
@@ -399,7 +399,7 @@ void Widget::on_gravarVideo_clicked()
     delete camera;
     delete viewFinder;
 
-     VideoCapture vcap(0);
+     VideoCapture vcap(1);
        if(!vcap.isOpened()){
               cout << "Error opening video stream or file" << endl;
 
@@ -407,7 +407,7 @@ void Widget::on_gravarVideo_clicked()
 
     int frame_width=   vcap.get(CV_CAP_PROP_FRAME_WIDTH);
     int frame_height=   vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
-    VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, Size(frame_width,frame_height),true);
+    VideoWriter video("/home/drn/Videos/record.avi",CV_FOURCC('M','J','P','G'),10, Size(frame_width,frame_height),true);
     //QString x;
     while(1){
 
